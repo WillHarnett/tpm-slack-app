@@ -4,6 +4,8 @@
   "description": "",
   "main": "app.js",
   "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "start": "DEBUG=* node app.js",
     "test": "test"
   },
@@ -11,13 +13,24 @@
   "license": "ISC",
   "dependencies": {
     "@slack/bolt": "^3.12.2",
+    "cookie-parser": "^1.4.6",
     "debug": "^4.3.4",
     "dotenv": "^16.0.3",
-    "eslint": "^8.28.0"
+    "eslint-plugin-jsdoc": "^39.6.4",
+    "express": "^4.18.2",
+    "jsdoc": "^4.0.0",
+    "morgan": "^1.10.0",
+    "swagger-jsdoc": "^6.2.5",
+    "swagger-ui-express": "^4.6.0"
   },
   "keywords": [
     "node",
     "glitch",
     "express"
-  ]
+  ],
+  "devDependencies": {
+    "eslint": "^8.28.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.26.0"
+  }
 }

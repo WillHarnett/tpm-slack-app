@@ -1,71 +1,41 @@
-// Require the Bolt package (github.com/slackapi/bolt)
-const { App } = require("@slack/bolt");
-require('dotenv').config();
-
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
 const debug = require('debug')('app');
 
-const app = new App({
-    token: process.env.SLACK_BOT_TOKEN,
-    signingSecret: process.env.SLACK_SIGNING_SECRET
+const app = express();
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => debug(`listening on ${PORT}`));
+app.disable('x-powered-by');
+
+app.use(logger('dev'));
+app.use(cookieParser());
+app.use(express.urlencoded({ extended: false }));
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.use((req, res, next) => {
+    express.json({
+        limit: '50mb',
+        verify: (buf, encoding) => {
+            debug(res);
+            debug(encoding);
+            req.rawBody = buf.toString();
+        }
+    })(req, res, (error) => {
+        if (error) {
+            res.sendStatus(400).json({ error: 'Bad body Request' });
+            return;
+        }
+        next();
+    });
 });
 
-// All the room in the world for your code
-(async () => {
-    // Start your app
-    await app.start(process.env.PORT || 3000);
+module.exports = app;
 
-    debug('⚡️ Bolt app is running!');
-})();
+// Routers
+const commandRouter = require('./routes/commandRouter')();
+const eventRouter = require('./routes/eventRouter')();
 
-app.event('app_home_opened', async ({ event, client, context }) => {
-    try {
-        /* view.publish is the method that your app uses to push a view to the Home tab */
-        const result = await client.views.publish({
-
-            /* the user that opened your app's app home */
-            user_id: event.user,
-
-            /* the view object that appears in the app home*/
-            view: {
-                type: 'home',
-                callback_id: 'home_view',
-
-                /* body of the view */
-                blocks: [
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "*Welcome to your _App's Home_* :tada:"
-                        }
-                    },
-                    {
-                        "type": "divider"
-                    },
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "This button won't do much for now but you can set up a listener for it using the `actions()` method and passing its unique `action_id`. See an example in the `examples` folder within your Bolt app."
-                        }
-                    },
-                    {
-                        "type": "actions",
-                        "elements": [
-                            {
-                                "type": "button",
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": "Click me!"
-                                }
-                            }
-                        ]
-                    }
-                ]
-            }
-        });
-    }
-    catch (error) {
-        console.error(error);
-    }
-});
+app.use('/command', commandRouter);
+app.use('/event', eventRouter);
